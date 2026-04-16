@@ -1,0 +1,371 @@
+{% extends "base.html" %} {% block title %}Holiday Management - Attendance
+System{% endblock %} {% block content %}
+<!-- Tailwind CSS Play CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary: "#4f46e5",
+          secondary: "#10b981",
+          accent: "#f59e0b",
+          danger: "#ef4444",
+        },
+      },
+    },
+  };
+</script>
+<style>
+  .holiday-calendar-container {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 30px;
+  }
+
+  .calendar-card {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 30px;
+  }
+
+  .calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+  }
+
+  .nav-btn {
+    padding: 10px 16px;
+    background: #f1f3f5;
+    border-radius: 10px;
+    color: #495057;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.2s;
+    border: 1px solid #dee2e6;
+  }
+
+  .nav-btn:hover {
+    background: #e9ecef;
+    color: #000;
+  }
+
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 12px;
+  }
+
+  .weekday {
+    font-weight: bold;
+    color: #adb5bd;
+    font-size: 13px;
+    text-transform: uppercase;
+    padding-bottom: 10px;
+    text-align: center;
+  }
+
+  .day-cell {
+    aspect-ratio: 1/1;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 1px solid #f1f3f5;
+  }
+
+  .day-cell:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+  }
+
+  .day-cell.other-month {
+    color: #dee2e6;
+    background: #f8f9fa;
+    border: none;
+    pointer-events: none;
+  }
+
+  .day-cell.is-holiday {
+    background: #fff5f5;
+    color: #c92a2a;
+    border: 1px solid #ffa8a8;
+  }
+
+  .day-cell.is-sunday {
+    background: #f8f9fa;
+    color: #adb5bd;
+  }
+
+  .day-reason {
+    font-size: 9px;
+    text-align: center;
+    padding-top: 4px;
+    font-weight: normal;
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sidebar-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .panel-card {
+    background: #fff;
+    padding: 24px;
+    border-radius: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
+    border: 1px solid #f1f3f5;
+  }
+
+  .panel-card h3 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    color: #343a40;
+  }
+
+  .holiday-input-group {
+    margin-bottom: 15px;
+  }
+
+  .holiday-input-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: bold;
+    color: #495057;
+  }
+
+  .holiday-input-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  .btn-add {
+    background: #4f46e5;
+    color: white;
+    border: none;
+    padding: 12px;
+    width: 100%;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .btn-add:hover {
+    background: #4338ca;
+  }
+
+  .holiday-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f1f3f5;
+  }
+
+  .holiday-item:last-child {
+    border-bottom: none;
+  }
+
+  .btn-remove {
+    color: #fa5252;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 12px;
+  }
+
+  .msg {
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    font-weight: bold;
+  }
+  .msg.success {
+    background: #d3f9d8;
+    color: #2b8a3e;
+    border: 1px solid #b2f2bb;
+  }
+  .msg.error {
+    background: #fff5f5;
+    color: #c92a2a;
+    border: 1px solid #ffc9c9;
+  }
+</style>
+
+<div class="holiday-management-container">
+  <div class="calendar-header">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-800">Holiday Calendar</h1>
+      <p class="text-gray-500">
+        Configure academic holidays and restricted dates.
+      </p>
+    </div>
+    <div class="flex gap-2">
+      <div
+        class="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl font-bold flex items-center gap-2 border border-indigo-100 italic"
+      >
+        <span class="text-xs uppercase opacity-70">Working Days:</span> {{ working_days_count }}
+      </div>
+      <a href="?month={{ prev_m }}&year={{ prev_y }}" class="nav-btn"
+        >&larr; Previous</a
+      >
+      <span class="px-4 py-2 font-black text-gray-800"
+        >{{ month_name }} {{ year }}</span
+      >
+      <a href="?month={{ next_m }}&year={{ next_y }}" class="nav-btn"
+        >Next &rarr;</a
+      >
+    </div>
+  </div>
+
+  {% if messages %} {% for message in messages %}
+  <div class="msg {% if message.tags %}{{ message.tags }}{% endif %}">
+    {{ message }}
+  </div>
+  {% endfor %} {% endif %}
+
+  <div class="holiday-calendar-container">
+    <!-- Main Calendar -->
+    <div class="calendar-card">
+      <div class="calendar-grid">
+        <div class="weekday">Mon</div>
+        <div class="weekday">Tue</div>
+        <div class="weekday">Wed</div>
+        <div class="weekday">Thu</div>
+        <div class="weekday">Fri</div>
+        <div class="weekday">Sat</div>
+        <div class="weekday" style="color: #fa5252">Sun</div>
+
+        {% for week in month_days %} {% for day in week %}
+        <div
+          class="day-cell {% if day.date.month != month %}other-month{% endif %} {% if day.is_holiday %}is-holiday{% endif %} {% if day.date.weekday == 6 %}is-sunday{% endif %}"
+          onclick="selectDate('{{ day.date|date:'Y-m-d' }}', '{{ day.reason }}')"
+        >
+          {{ day.date.day }} {% if day.is_holiday %}
+          <div class="day-reason">{{ day.reason }}</div>
+          {% endif %}
+        </div>
+        {% endfor %} {% endfor %}
+      </div>
+    </div>
+
+    <!-- Sidebar Actions -->
+    <div class="sidebar-panel">
+      <div class="panel-card">
+        <h3>Manage Holiday</h3>
+        <form method="post" id="holidayForm">
+          {% csrf_token %}
+          <div class="holiday-input-group">
+            <label>Selected Date</label>
+            <input type="date" name="date" id="dateInput" required />
+          </div>
+          <div class="holiday-input-group" id="reasonGroup">
+            <label>Reason</label>
+            <input
+              type="text"
+              name="reason"
+              id="reasonInput"
+              placeholder="e.g. Diwali, School Break"
+              required
+            />
+          </div>
+          <input type="hidden" name="action" id="actionInput" value="add" />
+          <button type="submit" class="btn-add" id="submitBtn">
+            Set Holiday
+          </button>
+          <button
+            type="button"
+            class="btn-add"
+            id="removeBtn"
+            style="background: #fa5252; margin-top: 10px; display: none"
+            onclick="removeHoliday()"
+          >
+            Remove Holiday
+          </button>
+        </form>
+      </div>
+
+      <div class="panel-card" style="max-height: 400px; overflow-y: auto">
+        <h3>Active Holidays in {{ month_name }}</h3>
+        {% for d, r in holidays.items %}
+        <div class="holiday-item">
+          <div>
+            <div style="font-size: 13px; font-weight: bold">
+              {{ d|date:"d M Y" }}
+            </div>
+            <div style="font-size: 11px; color: #868e96">{{ r }}</div>
+          </div>
+          <form method="post" style="margin: 0">
+            {% csrf_token %}
+            <input type="hidden" name="date" value="{{ d|date:'Y-m-d' }}" />
+            <input type="hidden" name="action" value="remove" />
+            <button type="submit" class="btn-remove">X</button>
+          </form>
+        </div>
+        {% empty %}
+        <p
+          style="
+            color: #adb5bd;
+            font-size: 13px;
+            font-style: italic;
+            text-align: center;
+          "
+        >
+          No holidays set for this month.
+        </p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function selectDate(dateVal, reason) {
+    document.getElementById("dateInput").value = dateVal;
+    const submitBtn = document.getElementById("submitBtn");
+    const removeBtn = document.getElementById("removeBtn");
+    const reasonInput = document.getElementById("reasonInput");
+    const actionInput = document.getElementById("actionInput");
+
+    if (reason && reason !== "None") {
+      reasonInput.value = reason;
+      submitBtn.textContent = "Update Reason";
+      removeBtn.style.display = "block";
+      actionInput.value = "add";
+    } else {
+      reasonInput.value = "";
+      submitBtn.textContent = "Set Holiday";
+      removeBtn.style.display = "none";
+      actionInput.value = "add";
+    }
+  }
+
+  function removeHoliday() {
+    if (confirm("Are you sure you want to remove this holiday?")) {
+      document.getElementById("actionInput").value = "remove";
+      document.getElementById("holidayForm").submit();
+    }
+  }
+</script>
+{% endblock %}

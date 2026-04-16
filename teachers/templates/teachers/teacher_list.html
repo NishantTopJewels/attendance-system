@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Faculty Directory - Attendance System{% endblock %}
+
+{% block content %}
+<!-- Tailwind CSS Play CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary: '#4f46e5',
+          secondary: '#10b981',
+          accent: '#f59e0b',
+          danger: '#ef4444',
+        }
+      }
+    }
+  }
+</script>
+
+<div class="space-y-6 animate-fadeIn">
+    <div class="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800">Faculty Directory</h1>
+            <p class="text-gray-500 mt-1">Manage and track all teacher accounts.</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{% url 'holiday_management' %}" class="bg-indigo-50 text-indigo-700 px-6 py-2 rounded-lg font-bold hover:bg-indigo-100 transition-colors border border-indigo-100">Manage Holidays</a>
+            <a href="{% url 'teacher_create' %}" class="bg-primary text-white px-6 py-2 rounded-lg font-bold hover:shadow-lg transition-all shadow-primary/20 bg-[#4f46e5]">Invite Teacher</a>
+        </div>
+    </div>
+
+    <!-- Teacher Table -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                    <tr>
+                        <th class="px-8 py-4">Teacher Name</th>
+                        <th class="px-8 py-4">Username / Email</th>
+                        <th class="px-8 py-4">Specialization</th>
+                        <th class="px-8 py-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    {% for teacher in teachers %}
+                    <tr class="hover:bg-gray-50/50 transition-colors group">
+                        <td class="px-8 py-5">
+                            <span class="font-bold text-gray-900">{{ teacher.firstname }} {{ teacher.lastname }}</span>
+                        </td>
+                        <td class="px-8 py-5">
+                            <span class="text-sm text-gray-500">{{ teacher.user.username }}</span>
+                        </td>
+                        <td class="px-8 py-5">
+                            <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full uppercase tracking-tighter">{{ teacher.subject }}</span>
+                        </td>
+                        <td class="px-8 py-5 text-right">
+                            <a href="{% url 'teacher_detail' teacher.pk %}" class="text-xs font-bold text-gray-400 hover:text-primary transition-colors">View Profile →</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="px-8 py-16 text-center text-gray-400 italic">
+                            No faculty members found in the directory.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeIn {
+        animation: fadeIn 0.5s ease-out forwards;
+    }
+</style>
+{% endblock %}

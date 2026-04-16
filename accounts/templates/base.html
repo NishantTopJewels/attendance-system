@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Attendance System{% endblock %}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f6;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 250px;
+            background-color: #343a40;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            padding-top: 20px;
+        }
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 22px;
+        }
+        .sidebar a {
+            color: #ccc;
+            text-decoration: none;
+            padding: 15px 20px;
+            display: block;
+            border-left: 4px solid transparent;
+            transition: 0.3s;
+        }
+        .sidebar a:hover {
+            background-color: #495057;
+            color: #fff;
+            border-left: 4px solid #007bff;
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .topbar {
+            background-color: #fff;
+            height: 60px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 0 20px;
+        }
+        .content {
+            padding: 30px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        /* Utility classes often used in views */
+        .card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .btn-logout {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-logout:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Layout -->
+    <div class="sidebar">
+        <h2>Attendance System</h2>
+        
+        <!-- Common Route -->
+        <a href="{% url 'dashboard_router' %}">Dashboard</a>
+
+        {% if user.is_staff %}
+            <!-- Teacher Navigation -->
+            <a href="{% url 'student_list' %}">Manage Students</a>
+            <a href="{% url 'mark_attendance' %}">Mark Attendance</a>
+            {% if user.is_superuser %}
+                <a href="{% url 'holiday_management' %}">Holidays Management</a>
+                <a href="{% url 'teacher_list' %}">Manage Teachers</a>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <!-- Main Section -->
+    <div class="main-content">
+        <div class="topbar">
+            {% if user.is_authenticated %}
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="text-align: right; line-height: 1.2;">
+                        <span style="display: block; font-size: 14px; font-weight: bold; color: #333;">
+                            {{ user.get_full_name|default:user.username }}
+                        </span>
+                        <span style="display: block; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">
+                            {% if user.is_superuser %}Administrator{% elif user.is_staff %}Teacher{% else %}Student{% endif %}
+                        </span>
+                    </div>
+                    <form method="post" action="{% url 'logout' %}" style="margin: 0; display: inline-block;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-logout" title="Logout">
+                            <svg style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            Logout
+                        </button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="content">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </div>
+
+</body>
+</html>

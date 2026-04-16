@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+
+{% block title %}Mark Attendance - Attendance System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="border-bottom: 2px solid #eaeaea; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="margin: 0; color: #333;">Attendance Tracking</h2>
+        {% if is_read_only %}
+            <a href="?date={{ selected_date }}&edit=true" style="background: #ffc107; color: #333; text-decoration: none; padding: 8px 15px; border-radius: 4px; font-weight: bold;">Edit Attendance</a>
+        {% endif %}
+    </div>
+
+    <style>
+        .date-picker-wrapper {
+            display: inline-block;
+            position: relative;
+        }
+        .date-display {
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 8px;
+            width: 160px;
+        }
+        .date-picker-panel {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+            display: none;
+            left: 0;
+            margin-top: 8px;
+            padding: 12px;
+            position: absolute;
+            top: 100%;
+            width: 280px;
+            z-index: 20;
+        }
+        .date-picker-panel.open {
+            display: block;
+        }
+        .calendar-header {
+            align-items: center;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .calendar-title {
+            color: #333;
+            font-weight: bold;
+        }
+        .calendar-nav {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 5px 9px;
+        }
+        .calendar-grid {
+            display: grid;
+            gap: 4px;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+        }
+        .calendar-weekday {
+            color: #666;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 6px 0;
+        }
+        .calendar-day {
+            background: #fff;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            min-height: 32px;
+            padding: 6px 0;
+        }
+        .calendar-day:hover:not(:disabled) {
+            border-color: #007bff;
+        }
+        .calendar-day.selected {
+            background: #007bff;
+            color: #fff;
+            font-weight: bold;
+        }
+        .calendar-day.holiday:not(.selected) {
+            background: #f8d7da;
+            color: #721c24;
+            font-weight: bold;
+        }
+        .calendar-day:disabled {
+            color: #bbb;
+            cursor: not-allowed;
+        }
+        .calendar-legend {
+            color: #666;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+    </style>
+
+    <!-- GET form to capture date changes automatically -->
+    <form method="get" id="dateForm" style="margin-bottom: 20px;">
+        <label for="dateDisplay" style="font-weight: bold; margin-right: 10px;">Tracking Date:</label>
+        <div class="date-picker-wrapper" id="datePicker">
+            <input type="text" id="dateDisplay" class="date-display" value="{{ selected_date }}" readonly required>
+            <input type="hidden" id="date" name="date" value="{{ selected_date }}">
+            <div class="date-picker-panel" id="datePickerPanel">
+                <div class="calendar-header">
+                    <button type="button" class="calendar-nav" id="prevMonth">&lt;</button>
+                    <div class="calendar-title" id="calendarTitle"></div>
+                    <button type="button" class="calendar-nav" id="nextMonth">&gt;</button>
+                </div>
+                <div class="calendar-grid" id="calendarGrid"></div>
+                <div class="calendar-legend">
+                    <span style="display: inline-block; width: 12px; height: 12px; background: #f8d7da; margin-right: 5px;"></span>
+                    Sunday / Holiday
+                </div>
+            </div>
+        </div>
+    </form>
+
+    {% if error_msg %}
+        <div style="background: #f8d7da; color: #721c24; padding: 20px; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 20px; text-align: center;">
+            <h3 style="margin-top: 0;">Restricted Tracking Day</h3>
+            <strong>{{ error_msg }}</strong>
+            <p style="margin-bottom: 0px; font-size: 14px; opacity: 0.8;">Select a different working day using the date picker above.</p>
+        </div>
+    {% else %}
+        <form method="post" action="?date={{ selected_date }}{% if edit_mode %}&edit=true{% endif %}">
+            {% csrf_token %}
+            <!-- Ensure POST sees the selected date -->
+            <input type="hidden" name="date" value="{{ selected_date }}">
+
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                <thead>
+                    <tr>
+                        <th style="text-align: left; padding: 12px; border-bottom: 1px solid #ddd; background-color: #f8f9fa;">Student Name</th>
+                        <th style="text-align: left; padding: 12px; border-bottom: 1px solid #ddd; background-color: #f8f9fa;">Roll Number</th>
+                        <th style="text-align: left; padding: 12px; border-bottom: 1px solid #ddd; background-color: #f8f9fa;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr>
+                        <td style="padding: 12px; border-bottom: 1px solid #ddd;">{{ student.first_name }} {{ student.last_name }}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #ddd;">{{ student.roll_number }}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #ddd;">
+                            {% if is_read_only %}
+                                {% if student.id in present_student_ids %}
+                                    <span style="color: #28a745; font-weight: bold;">Present</span>
+                                {% else %}
+                                    <span style="color: #dc3545; font-weight: bold;">Absent</span>
+                                {% endif %}
+                            {% else %}
+                                <input type="checkbox" name="student_{{ student.id }}" style="transform: scale(1.5);"
+                                    {% if student.id in present_student_ids %}checked{% endif %}>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding: 20px; color: #666;">No students found in the system.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% if not is_read_only and students %}
+                {% if records_exist %}
+                    <button type="submit" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 16px;">Save Changes</button>
+                {% else %}
+                    <button type="submit" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 16px;">Capture Attendance</button>
+                {% endif %}
+            {% endif %}
+        </form>
+    {% endif %}
+</div>
+
+{{ holiday_dates|json_script:"holidayDates" }}
+<script>
+    const dateForm = document.getElementById('dateForm');
+    const dateInput = document.getElementById('date');
+    const dateDisplay = document.getElementById('dateDisplay');
+    const panel = document.getElementById('datePickerPanel');
+    const title = document.getElementById('calendarTitle');
+    const grid = document.getElementById('calendarGrid');
+    const prevMonth = document.getElementById('prevMonth');
+    const nextMonth = document.getElementById('nextMonth');
+    const holidays = new Set(JSON.parse(document.getElementById('holidayDates').textContent));
+    const today = new Date('{{ today_date }}T00:00:00');
+    const selectedDate = new Date('{{ selected_date }}T00:00:00');
+    let visibleYear = selectedDate.getFullYear();
+    let visibleMonth = selectedDate.getMonth();
+
+    function formatDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function renderCalendar() {
+        grid.innerHTML = '';
+        title.textContent = new Date(visibleYear, visibleMonth).toLocaleDateString('en-US', {
+            month: 'long',
+            year: 'numeric'
+        });
+
+        ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].forEach(function(dayName) {
+            const cell = document.createElement('div');
+            cell.className = 'calendar-weekday';
+            cell.textContent = dayName;
+            grid.appendChild(cell);
+        });
+
+        const firstDay = new Date(visibleYear, visibleMonth, 1);
+        const startOffset = (firstDay.getDay() + 6) % 7;
+        const daysInMonth = new Date(visibleYear, visibleMonth + 1, 0).getDate();
+
+        for (let i = 0; i < startOffset; i++) {
+            grid.appendChild(document.createElement('div'));
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const cellDate = new Date(visibleYear, visibleMonth, day);
+            const dateValue = formatDate(cellDate);
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'calendar-day';
+            button.textContent = day;
+
+            if (cellDate.getDay() === 0 || holidays.has(dateValue)) {
+                button.classList.add('holiday');
+            }
+
+            if (dateValue === dateInput.value) {
+                button.classList.add('selected');
+            }
+
+            if (cellDate > today) {
+                button.disabled = true;
+            }
+
+            button.addEventListener('click', function() {
+                dateInput.value = dateValue;
+                dateDisplay.value = dateValue;
+                dateForm.submit();
+            });
+
+            grid.appendChild(button);
+        }
+    }
+
+    function toggleCalendar(forceOpen) {
+        const shouldOpen = forceOpen === undefined ? !panel.classList.contains('open') : forceOpen;
+        panel.classList.toggle('open', shouldOpen);
+        if (shouldOpen) {
+            renderCalendar();
+        }
+    }
+
+    dateDisplay.addEventListener('click', function() {
+        toggleCalendar(true);
+    });
+
+    prevMonth.addEventListener('click', function() {
+        visibleMonth -= 1;
+        if (visibleMonth < 0) {
+            visibleMonth = 11;
+            visibleYear -= 1;
+        }
+        renderCalendar();
+    });
+
+    nextMonth.addEventListener('click', function() {
+        visibleMonth += 1;
+        if (visibleMonth > 11) {
+            visibleMonth = 0;
+            visibleYear += 1;
+        }
+        renderCalendar();
+    });
+
+    document.addEventListener('click', function(event) {
+        if (!document.getElementById('datePicker').contains(event.target)) {
+            toggleCalendar(false);
+        }
+    });
+</script>
+{% endblock %}

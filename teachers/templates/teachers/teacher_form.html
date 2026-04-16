@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}{% if object %}Update {{ object.firstname }}{% else %}Register Teacher{% endif %} - Attendance System{% endblock %}
+
+{% block content %}
+<style>
+    .teacher-form-shell {
+        max-width: 620px;
+        margin: 0 auto;
+    }
+
+    .teacher-form-header {
+        border-bottom: 2px solid #eaeaea;
+        margin-bottom: 24px;
+        padding-bottom: 14px;
+    }
+
+    .teacher-form-header h2 {
+        color: #333;
+        margin: 0;
+    }
+
+    .teacher-form-header p {
+        color: #666;
+        margin: 8px 0 0;
+    }
+
+    .teacher-form label {
+        color: #555;
+        display: block;
+        font-weight: bold;
+        margin-bottom: 6px;
+    }
+
+    .teacher-form input, .teacher-form select {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+        font-size: 15px;
+        padding: 11px 12px;
+        width: 100%;
+    }
+
+    .teacher-form input:focus {
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+        outline: none;
+    }
+
+    .errorlist {
+        color: #dc3545;
+        font-size: 13px;
+        list-style: none;
+        margin: 0 0 6px;
+        padding-left: 0;
+    }
+
+    .form-actions {
+        border-top: 1px solid #eaeaea;
+        margin-top: 22px;
+        padding-top: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .btn-save {
+        background: #4f46e5;
+        border: none;
+        border-radius: 4px;
+        color: white;
+        cursor: pointer;
+        display: block;
+        font-size: 16px;
+        font-weight: bold;
+        padding: 12px 20px;
+        text-align: center;
+        width: 100%;
+        transition: background 0.2s;
+    }
+
+    .btn-save:hover {
+        background: #4338ca;
+    }
+
+    .btn-cancel {
+        background: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        color: #333;
+        display: block;
+        font-size: 15px;
+        font-weight: bold;
+        padding: 11px 20px;
+        text-align: center;
+        text-decoration: none;
+        transition: background 0.2s;
+    }
+
+    .btn-cancel:hover {
+        background: #e9ecef;
+    }
+
+    .toast-stack {
+        position: fixed;
+        right: 24px;
+        top: 24px;
+        z-index: 100;
+    }
+
+    .toast {
+        animation: toastIn 0.25s ease-out, toastOut 0.3s ease-in 4.5s forwards;
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 6px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        color: #155724;
+        font-weight: bold;
+        margin-bottom: 10px;
+        min-width: 280px;
+        padding: 14px 16px;
+    }
+</style>
+
+{% if messages %}
+<div class="toast-stack" aria-live="polite">
+    {% for message in messages %}
+    <div class="toast">
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="card teacher-form-shell">
+    <div class="teacher-form-header">
+        <h2>{% if object %}Update Teacher Profile{% else %}Register New Teacher{% endif %}</h2>
+        <p>
+            {% if object %}
+                Modify official details for {{ object.firstname }} {{ object.lastname }}.
+            {% else %}
+                Invite a new faculty member. An invitation link will be sent to their email.
+            {% endif %}
+        </p>
+    </div>
+
+    <div class="teacher-form">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="form-actions">
+                <button type="submit" class="btn-save">
+                    {% if object %}Save Profile Changes{% else %}Send Invitation{% endif %}
+                </button>
+                <a href="{% url 'teacher_list' %}" class="btn-cancel">Return to Directory</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Students - Attendance System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eaeaea; padding-bottom: 10px; margin-bottom: 20px;">
+        <h2 style="margin: 0; color: #333;">Students List</h2>
+        <a href="{% url 'student_create' %}" style="background: #28a745; color: white; text-decoration: none; padding: 8px 15px; border-radius: 4px;">Create Student</a>
+    </div>
+
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th style="text-align: left; padding: 12px; border-bottom: 1px solid #ddd; background-color: #f8f9fa;">Roll Number</th>
+                <th style="text-align: left; padding: 12px; border-bottom: 1px solid #ddd; background-color: #f8f9fa;">First Name</th>
+                <th style="text-align: left; padding: 12px; border-bottom: 1px solid #ddd; background-color: #f8f9fa;">Last Name</th>
+                <th style="text-align: left; padding: 12px; border-bottom: 1px solid #ddd; background-color: #f8f9fa;">Age</th>
+                <th style="text-align: left; padding: 12px; border-bottom: 1px solid #ddd; background-color: #f8f9fa;">Email</th>
+                <th style="text-align: left; padding: 12px; border-bottom: 1px solid #ddd; background-color: #f8f9fa;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in students %}
+            <tr>
+                <td style="padding: 12px; border-bottom: 1px solid #ddd;">{{ student.roll_number }}</td>
+                <td style="padding: 12px; border-bottom: 1px solid #ddd;">{{ student.first_name }}</td>
+                <td style="padding: 12px; border-bottom: 1px solid #ddd;">{{ student.last_name }}</td>
+                <td style="padding: 12px; border-bottom: 1px solid #ddd;">{{ student.age }}</td>
+                <td style="padding: 12px; border-bottom: 1px solid #ddd;">{{ student.email }}</td>
+                <td style="padding: 12px; border-bottom: 1px solid #ddd;">
+                    <a href="{% url 'student_detail' student.pk %}" style="color: #4f46e5; text-decoration: none; font-weight: bold;">View Details</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 20px; color: #666;">No students found. Click 'Create Student' to register one.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

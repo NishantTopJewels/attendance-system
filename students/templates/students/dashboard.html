@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% load math_filters %}
+
+{% block title %}My Student Dashboard - Attendance System{% endblock %}
+
+{% block content %}
+<!-- Tailwind CSS Play CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          primary: '#4f46e5',
+          secondary: '#10b981',
+          accent: '#f59e0b',
+          danger: '#ef4444',
+        }
+      }
+    }
+  }
+</script>
+
+<div class="space-y-8 animate-fadeIn">
+    <!-- Header -->
+    <div>
+        <h1 class="text-3xl font-extrabold text-gray-800">Student Dashboard</h1>
+        <p class="text-gray-500 mt-1">Hello, <span class="text-primary font-bold">{{ student.first_name }}</span>! Here is your attendance for {{ month_name }}.</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow group">
+            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Classes</p>
+            <h3 class="text-3xl font-extrabold text-gray-900">{{ total_working_days }}</h3>
+            <p class="text-xs text-gray-400 mt-2 italic">Captured working days only</p>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-secondary">Present</p>
+            <h3 class="text-3xl font-extrabold text-gray-900">{{ total_present }}</h3>
+            <div class="w-full bg-gray-100 h-1.5 rounded-full mt-4 overflow-hidden">
+                <div class="bg-secondary h-full rounded-full" style="width: {{ percentage }}%"></div>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-danger">Absent</p>
+            <h3 class="text-3xl font-extrabold text-gray-900">{{ total_absent }}</h3>
+            <div class="w-full bg-gray-100 h-1.5 rounded-full mt-4 overflow-hidden">
+                <div class="bg-danger h-full rounded-full" style="width: {% if total_working_days > 0 %}{{ total_absent|multiply:100|divide:total_working_days }}{% else %}0{% endif %}%"></div>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 text-primary">Score</p>
+            <h3 class="text-3xl font-extrabold text-gray-900">{{ percentage|floatformat:1 }}%</h3>
+            <p class="text-xs font-semibold mt-2 {% if percentage >= 75 %}text-secondary{% else %}text-danger{% endif %} group">
+                {% if percentage >= 75 %}On Track{% else %}Critical Attention{% endif %}
+            </p>
+        </div>
+    </div>
+
+    <!-- Streaks & Heatmap -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Heatmap Section -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
+                    <div class="flex items-center gap-4">
+                        <a href="?month={{ prev_month }}&year={{ prev_year }}" class="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-primary transition-all">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        </a>
+                        <h2 class="text-xl font-bold text-gray-800">{{ month_name }}</h2>
+                        <a href="?month={{ next_month }}&year={{ next_year }}" class="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-primary transition-all">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </a>
+                    </div>
+                    <div class="flex gap-4 text-[10px] uppercase font-black tracking-widest text-gray-400">
+                        <div class="flex items-center gap-1.5"><div class="w-3 h-3 bg-secondary rounded-sm"></div> Present</div>
+                        <div class="flex items-center gap-1.5"><div class="w-3 h-3 bg-danger rounded-sm opacity-60"></div> Absent</div>
+                        <div class="flex items-center gap-1.5"><div class="w-3 h-3 bg-blue-500 rounded-sm opacity-60"></div> Holiday</div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-7 gap-3 text-center">
+                    <!-- Weekdays names -->
+                    {% for day in weekdays %}
+                    <div class="text-[10px] font-bold text-gray-400 uppercase mb-2">{{ day }}</div>
+                    {% endfor %}
+
+                    <!-- Blank slots for start of month -->
+                    {% for i in ""|center:start_weekday %}
+                    <div class="aspect-square"></div>
+                    {% endfor %}
+
+                    <!-- Days -->
+                    {% for day in heatmap_data %}
+                    <div class="relative group aspect-square flex items-center justify-center rounded-xl text-sm font-bold transition-all duration-300
+                        {% if day.status == 'present' %}
+                            bg-secondary/10 text-secondary border border-secondary/20 hover:bg-secondary hover:text-white
+                        {% elif day.status == 'absent' %}
+                            bg-danger/10 text-danger border border-danger/20 hover:bg-danger hover:text-white
+                        {% elif day.status == 'holiday' %}
+                           bg-blue-400 text-white border border-blue-600 hover:bg-blue-600 cursor-help
+                        {% else %}
+                            bg-gray-50 text-gray-300 border border-gray-100 italic font-medium
+                        {% endif %}">
+                        {{ day.date.day }}
+                        
+                        <!-- Tooltip for holiday -->
+                        {% if day.status == 'holiday' %}
+                            {% with reason=holiday_map|get_item:day.date %}
+                                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-3 py-1 bg-gray-900 text-white text-[10px] rounded pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                    {{ reason|default:"Non-working Day" }}
+                                </div>
+                            {% endwith %}
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Streaks Column -->
+        <div class="space-y-8">
+            <div class="bg-gradient-to-br from-primary to-indigo-700 p-8 rounded-3xl text-white shadow-lg shadow-primary/20 relative overflow-hidden group">
+                <div class="absolute -right-4 -bottom-4 w-32 h-32 bg-white/10 rounded-full group-hover:scale-110 transition-transform"></div>
+                <h3 class="text-xs font-black uppercase tracking-[0.2em] opacity-70 mb-6">Current Streak</h3>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-6xl font-black">{{ current_streak }}</span>
+                    <span class="text-xl font-bold opacity-80 uppercase tracking-widest">Days</span>
+                </div>
+                <p class="text-xs mt-4 opacity-70 leading-relaxed italic">Keep showing up! Your hard work is building momentum.</p>
+            </div>
+
+            <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 group">
+                <h3 class="text-xs font-black uppercase tracking-widest text-gray-400 mb-6">Longest Streak</h3>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-5xl font-black text-gray-900">{{ longest_streak }}</span>
+                    <span class="text-lg font-bold text-gray-400 uppercase tracking-widest">Days</span>
+                </div>
+                <!-- Mini progress bar logic if we want -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline Table -->
+    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-8 py-6 border-b border-gray-50 flex justify-between items-center">
+            <h3 class="font-bold text-gray-800 text-lg">Activity Timeline</h3>
+            <span class="text-xs font-bold bg-gray-100 text-gray-500 px-3 py-1 rounded-full uppercase tracking-tighter">{{ month_name }}</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    <tr>
+                        <th class="px-10 py-5">Date</th>
+                        <th class="px-10 py-5 text-center">Outcome</th>
+                        <th class="px-10 py-5">Verified By</th>
+                        <th class="px-10 py-5 text-right">Last Sync</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    {% for a in timeline %}
+                    <tr class="hover:bg-gray-50/50 transition-colors">
+                        <td class="px-10 py-6">
+                            <p class="font-bold text-gray-900">{{ a.date|date:"l, d M" }}</p>
+                        </td>
+                        <td class="px-10 py-6 text-center">
+                            {% if a.status %}
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-secondary/10 text-secondary text-[10px] font-black rounded-full uppercase tracking-widest">
+                                    <div class="w-1.5 h-1.5 bg-secondary rounded-full animate-pulse"></div>
+                                    PRESENT
+                                </span>
+                            {% else %}
+                                <span class="px-3 py-1 bg-danger/10 text-danger text-[10px] font-black rounded-full uppercase tracking-widest">ABSENT</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-10 py-6">
+                            <div class="flex items-center gap-2">
+                                <div class="w-2 h-2 bg-gray-200 rounded-full"></div>
+                                <span class="text-xs font-medium text-gray-600">{{ a.marked_by.username|default:"System" }}</span>
+                            </div>
+                        </td>
+                        <td class="px-10 py-6 text-right text-xs text-gray-400 font-medium">
+                            {{ a.updated_at|date:"P" }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="px-10 py-20 text-center">
+                            <div class="flex flex-col items-center gap-4 text-gray-400 italic">
+                                <svg class="w-12 h-12 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                                No activity records found for this period.
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeIn {
+        animation: fadeIn 0.5s ease-out forwards;
+    }
+</style>
+{% endblock %}

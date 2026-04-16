@@ -1,0 +1,15 @@
+*.pyc
+__pycache__/
+venv/
+.venv/
+.env
+staticfiles/
+logs/
+
+migrations/
+
+**/migrations/__pycache__/
+**/migrations/*.pyc
+
+**/migrations/__pycache__/
+**/migrations/*.pyc
