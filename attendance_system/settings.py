@@ -147,3 +147,7 @@ LOGIN_REDIRECT_URL = "dashboard_router"
 LOGIN_URL = "root_login"
 LOGOUT_REDIRECT_URL = "root_login"
 
+# Media files
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+

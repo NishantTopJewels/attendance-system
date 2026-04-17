@@ -19,12 +19,15 @@ from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
 from accounts import views as accounts_views
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("student/", include("students.urls")),
     path("teachers/", include("teachers.urls")),
     path("attendance/", include("attendance.urls")),
+    path("disputes/", include("disputes.urls")),
     path("", accounts_views.HomeView.as_view(), name="home"),
     path("login/", accounts_views.RoleLoginView.as_view(), name="root_login"),
     path("accounts/", include("django.contrib.auth.urls")),
@@ -32,3 +35,6 @@ urlpatterns = [
     # Custom path for reusability as per user request: /set-password/<uid>/<token>/
     path("set-password/<uidb64>/<token>/", accounts_views.AccountPasswordResetConfirmView.as_view(), name="password_reset_confirm"),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -12,6 +12,7 @@ from .models import Student
 from .forms import StudentCreationForm, StudentUpdateForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from attendance.models import Attendance, Holiday
+from disputes.models import Dispute
 from attendance.utils import get_date_range, get_working_days_in_range
 from datetime import timedelta, date
 from django.utils import timezone
@@ -246,6 +247,9 @@ class StudentDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView
         captured_working_days = set(
             d for d in get_working_days_in_range(start_date, end_date) if d in captured_dates
         )
+        
+        # Fetch disputes mapping
+        dispute_map = {d.date: d.status for d in Dispute.objects.filter(student=student, date__range=(start_date, end_date))}
 
         # 2. Calendar Heatmap Data
         heatmap_data = []
@@ -270,7 +274,11 @@ class StudentDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView
             else:
                 status = "not_marked"
             
-            heatmap_data.append({'date': curr, 'status': status})
+            heatmap_data.append({
+                'date': curr, 
+                'status': status,
+                'dispute_status': dispute_map.get(curr)
+            })
             curr += timedelta(days=1)
 
         # 3. Stats Calculation

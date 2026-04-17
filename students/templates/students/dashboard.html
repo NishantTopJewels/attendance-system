@@ -199,16 +199,27 @@
             {% endfor %}
 
             {% for day in heatmap_data %}
-                <div class="matrix-day {{ day.status }}" title="{{ day.date }}">
+                {% if day.status == 'absent' and not day.dispute_status %}
+                <a href="{% url 'create_dispute' day.date|date:'Y-m-d' %}" class="matrix-day {{ day.status }}" title="Click to raise dispute for {{ day.date }}" style="text-decoration: none; cursor: pointer;">
                     {{ day.date.day }}
+                </a>
+                {% else %}
+                <div class="matrix-day {{ day.status }}" title="{{ day.date }} {% if day.dispute_status %}(Dispute: {{ day.dispute_status }}){% endif %}" style="position: relative;">
+                    {{ day.date.day }}
+                    {% if day.dispute_status %}
+                    <div style="position: absolute; bottom: 4px; width: 4px; height: 4px; border-radius: 50%; 
+                        {% if day.dispute_status == 'pending' %} background: #f59e0b; {% elif day.dispute_status == 'approved' %} background: #10b981; {% else %} background: #ef4444; {% endif %}"></div>
+                    {% endif %}
                 </div>
+                {% endif %}
             {% endfor %}
         </div>
 
-        <div style="display: flex; gap: 16px; margin-top: 24px; font-size: 11px; font-weight: 700;">
+        <div style="display: flex; gap: 16px; margin-top: 24px; font-size: 11px; font-weight: 700; flex-wrap: wrap;">
             <div style="display: flex; align-items: center; gap: 6px;"><div style="width: 10px; height: 10px; background: #d1fae5; border-radius: 3px;"></div> Present</div>
             <div style="display: flex; align-items: center; gap: 6px;"><div style="width: 10px; height: 10px; background: #fee2e2; border-radius: 3px;"></div> Absent</div>
             <div style="display: flex; align-items: center; gap: 6px;"><div style="width: 10px; height: 10px; background: #dbeafe; border-radius: 3px;"></div> Holiday</div>
+            <div style="display: flex; align-items: center; gap: 6px;"><div style="width: 6px; height: 6px; background: #f59e0b; border-radius: 50%;"></div> Dispute</div>
         </div>
     </div>
 
@@ -254,6 +265,17 @@
                             <span class="status-badge status-present">Present</span>
                         {% else %}
                             <span class="status-badge status-absent">Absent</span>
+                            {% with a.disputes.first as dispute %}
+                                {% if dispute %}
+                                    <span style="font-size: 9px; font-weight: 800; text-transform: uppercase; color: {% if dispute.status == 'approved' %}#10b981{% elif dispute.status == 'rejected' %}#ef4444{% else %}#f59e0b{% endif %}; display: block; margin-top: 4px;">
+                                        Dispute {{ dispute.status }}
+                                    </span>
+                                {% else %}
+                                    <a href="{% url 'create_dispute' a.date|date:'Y-m-d' %}" style="font-size: 9px; font-weight: 800; text-transform: uppercase; color: var(--primary); display: block; margin-top: 4px; text-decoration: none;">
+                                        Raise Dispute
+                                    </a>
+                                {% endif %}
+                            {% endwith %}
                         {% endif %}
                     </td>
                     <td>

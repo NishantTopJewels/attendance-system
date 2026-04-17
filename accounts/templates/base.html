@@ -305,6 +305,10 @@
                     <i class="fas fa-calendar-check"></i>
                     <span>Mark Attendance</span>
                 </a>
+                <a href="{% url 'manage_disputes' %}" id="nav-manage-disputes">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>Manage Disputes</span>
+                </a>
                 {% if user.is_superuser %}
                     <a href="{% url 'holiday_management' %}" id="nav-holidays">
                         <i class="fas fa-calendar-plus"></i>
@@ -315,6 +319,11 @@
                         <span>Teachers</span>
                     </a>
                 {% endif %}
+            {% else %}
+                <a href="{% url 'my_disputes' %}" id="nav-my-disputes">
+                    <i class="fas fa-envelope-open-text"></i>
+                    <span>My Disputes</span>
+                </a>
             {% endif %}
         </div>
 
