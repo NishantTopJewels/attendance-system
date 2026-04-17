@@ -128,6 +128,11 @@ class HolidayManagementView(AdminRequiredMixin, TemplateView):
 
         target_date = date.fromisoformat(h_date)
 
+        today = date.today()
+        if target_date < today:
+            messages.error(request, "Cannot modify holidays in the past.")
+            return redirect("holiday_management")
+
         if action == "add":
             # Check if attendance exists
             if Attendance.objects.filter(date=target_date).exists():
@@ -141,8 +146,12 @@ class HolidayManagementView(AdminRequiredMixin, TemplateView):
                 )
                 messages.success(request, f"Holiday added for {h_date}.")
         elif action == "remove":
-            Holiday.objects.filter(date=target_date).delete()
-            messages.success(request, f"Holiday removed for {h_date}.")
+            # Also block removal if it's today and attendance exists
+            if target_date == today and Attendance.objects.filter(date=target_date).exists():
+                 messages.error(request, "Cannot remove holiday after attendance has been captured for today.")
+            else:
+                Holiday.objects.filter(date=target_date).delete()
+                messages.success(request, f"Holiday removed for {h_date}.")
 
         return redirect("holiday_management")
 
@@ -200,6 +209,7 @@ class HolidayManagementView(AdminRequiredMixin, TemplateView):
                 "prev_y": prev_y,
                 "next_m": next_m,
                 "next_y": next_y,
+                "today": date.today(),
             }
         )
         return context

@@ -1,689 +1,347 @@
-{% extends "base.html" %} {% block title %}Teacher Dashboard - Attendance
-System{% endblock %} {% block content %} {% load math_filters %}
-<!-- Tailwind CSS Play CDN -->
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-  tailwind.config = {
-    theme: {
-      extend: {
-        colors: {
-          primary: "#4f46e5",
-          secondary: "#10b981",
-          accent: "#f59e0b",
-          danger: "#ef4444",
-        },
-      },
-    },
-  };
-</script>
+{% extends "base.html" %}
+{% load math_filters %}
 
-<div class="space-y-8 animate-fadeIn">
-  <!-- Header & Global Filters -->
-  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+{% block title %}Analytics Dashboard - EduTrack{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 32px;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .filter-pills {
+        display: flex;
+        background: #fff;
+        padding: 4px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        gap: 4px;
+    }
+
+    .filter-pill {
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .filter-pill.active {
+        background: var(--primary);
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+    }
+
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 24px;
+        margin-bottom: 32px;
+    }
+
+    .metric-card {
+        background: #fff;
+        padding: 24px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--primary);
+    }
+
+    .metric-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        margin-bottom: 16px;
+    }
+
+    .bg-blue-soft { background: #eff6ff; color: #1d4ed8; }
+    .bg-green-soft { background: #f0fdf4; color: #15803d; }
+    .bg-red-soft { background: #fef2f2; color: #b91c1c; }
+    .bg-orange-soft { background: #fff7ed; color: #c2410c; }
+
+    .main-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 32px;
+    }
+
+    .dist-circle {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--background);
+        margin: 0 auto 12px;
+    }
+
+    .dist-circle svg {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+    }
+
+    .dist-circle circle {
+        fill: none;
+        stroke-width: 6;
+        stroke-linecap: round;
+        transition: stroke-dashoffset 1s ease-out;
+    }
+
+    .critical-list {
+        background: #fff;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        overflow: hidden;
+    }
+
+    .list-header {
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .student-row {
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        border-bottom: 1px solid var(--background);
+        transition: background 0.2s;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .student-row:hover {
+        background: var(--background);
+    }
+
+    .student-avatar {
+        width: 40px;
+        height: 40px;
+        background: var(--background);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: var(--primary);
+    }
+
+    @media (max-width: 1024px) {
+        .main-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
     <div>
-      <h1 class="text-3xl font-bold text-gray-800">Analytics Dashboard</h1>
-      <p class="text-gray-500 mt-1">
-        Real-time attendance insights and student performance tracking.
-      </p>
+        <h1 style="font-size: 32px; font-weight: 800; letter-spacing: -1px; color: var(--text-main);">Analytics Dashboard</h1>
+        <p style="color: var(--text-muted);">Monitoring student participation and attendance patterns</p>
     </div>
 
-    <div
-      class="flex items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-gray-100"
-    >
-      <span class="text-sm font-medium text-gray-500 px-3">Filter:</span>
-      <div class="flex gap-1">
+    <div class="filter-pills">
         {% for type, label in filter_options %}
-        <a
-          href="?filter={{ type }}{% if type == 'custom' %}&start_date={{ start_date }}&end_date={{ end_date }}{% endif %}"
-          class="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 {% if filter_type == type %} bg-primary text-white shadow-md shadow-primary/20 {% else %} text-gray-600 hover:bg-gray-100 {% endif %}"
-        >
-          {{ label }}
+        <a href="?filter={{ type }}{% if type == 'custom' %}&start_date={{ start_date }}&end_date={{ end_date }}{% endif %}" 
+           class="filter-pill {% if filter_type == type %}active{% endif %}">
+            {{ label }}
         </a>
         {% endfor %}
-      </div>
     </div>
-  </div>
-
-  <!-- Custom Date Range Form -->
-  {% if filter_type == 'custom' %}
-  <div
-    class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 animate-fadeIn"
-  >
-    <form method="get" class="flex flex-wrap items-end gap-4">
-      <input type="hidden" name="filter" value="custom" />
-      <div class="space-y-1">
-        <label class="text-xs font-bold text-gray-500 uppercase"
-          >Start Date</label
-        >
-        <input
-          type="date"
-          name="start_date"
-          value="{{ start_date|date:'Y-m-d' }}"
-          class="block w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-        />
-      </div>
-      <div class="space-y-1">
-        <label class="text-xs font-bold text-gray-500 uppercase"
-          >End Date</label
-        >
-        <input
-          type="date"
-          name="end_date"
-          value="{{ end_date|date:'Y-m-d' }}"
-          class="block w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-        />
-      </div>
-      <button
-        type="submit"
-        class="px-6 py-2 bg-primary text-white font-bold rounded-lg hover:shadow-lg transition-all active:scale-95"
-      >
-        Apply Range
-      </button>
-    </form>
-  </div>
-  {% endif %}
-
-  <!-- Today Snapshot Cards -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-    <!-- Total Students -->
-    <div
-      class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow group"
-    >
-      <div class="flex items-center justify-between">
-        <div
-          class="p-3 bg-blue-50 rounded-xl group-hover:bg-blue-100 transition-colors"
-        >
-          <svg
-            class="w-6 h-6 text-blue-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-            ></path>
-          </svg>
-        </div>
-        <span
-          class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full"
-          >Total</span
-        >
-      </div>
-      <div class="mt-4">
-        <h3 class="text-3xl font-extrabold text-gray-900">
-          {{ total_students_count }}
-        </h3>
-        <p
-          class="text-sm font-medium text-gray-500 uppercase tracking-wider mt-1"
-        >
-          Total Roster
-        </p>
-      </div>
-    </div>
-
-    <!-- Present Today -->
-    <div
-      class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow group"
-    >
-      <div class="flex items-center justify-between">
-        <div
-          class="p-3 bg-secondary/10 rounded-xl group-hover:bg-secondary/20 transition-colors"
-        >
-          <svg
-            class="w-6 h-6 text-secondary"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            ></path>
-          </svg>
-        </div>
-        <span
-          class="text-xs font-bold text-secondary bg-secondary/10 px-2 py-1 rounded-full"
-          >Today</span
-        >
-      </div>
-      <div class="mt-4">
-        <h3 class="text-3xl font-extrabold text-gray-900">
-          {{ present_today }}
-        </h3>
-        <p
-          class="text-sm font-medium text-gray-500 uppercase tracking-wider mt-1"
-        >
-          Present Today
-        </p>
-      </div>
-    </div>
-
-    <!-- Absent Today -->
-    <div
-      class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow group"
-    >
-      <div class="flex items-center justify-between">
-        <div
-          class="p-3 bg-danger/10 rounded-xl group-hover:bg-danger/20 transition-colors"
-        >
-          <svg
-            class="w-6 h-6 text-danger"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-            ></path>
-          </svg>
-        </div>
-        <span
-          class="text-xs font-bold text-danger bg-danger/10 px-2 py-1 rounded-full"
-          >Today</span
-        >
-      </div>
-      <div class="mt-4">
-        <h3 class="text-3xl font-extrabold text-gray-900">
-          {{ absent_today }}
-        </h3>
-        <p
-          class="text-sm font-medium text-gray-500 uppercase tracking-wider mt-1"
-        >
-          Absent Today
-        </p>
-      </div>
-    </div>
-
-    <!-- Attendance % -->
-    <div
-      class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow group"
-    >
-      <div class="flex items-center justify-between">
-        <div
-          class="p-3 bg-accent/10 rounded-xl group-hover:bg-accent/20 transition-colors"
-        >
-          <svg
-            class="w-6 h-6 text-accent"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-            ></path>
-          </svg>
-        </div>
-        <span
-          class="text-xs font-bold text-accent bg-accent/10 px-2 py-1 rounded-full"
-          >Rate</span
-        >
-      </div>
-      <div class="mt-4">
-        <div class="flex items-baseline gap-1">
-          <h3 class="text-3xl font-extrabold text-gray-900">
-            {% if filter_type == 'today' %}
-                {{ attendance_percentage_today|floatformat:1 }}
-            {% else %}
-                {{ avg_percentage|floatformat:1 }}
-            {% endif %}
-          </h3>
-          <span class="text-xl font-bold text-gray-500">%</span>
-        </div>
-        <p
-          class="text-sm font-medium text-gray-500 uppercase tracking-wider mt-1"
-        >
-          Avg. Attendance
-        </p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Range Analytics Information -->
-  <div
-    class="bg-primary/5 border border-primary/10 rounded-2xl p-4 flex flex-wrap items-center gap-6 justify-center md:justify-start"
-  >
-    <div class="flex items-center gap-2">
-      <span class="text-gray-500 font-medium">Selected Range:</span>
-      <span
-        class="bg-white px-3 py-1 rounded-lg text-primary font-bold shadow-sm border border-primary/10"
-        >{{ start_date }} to {{ end_date }}</span
-      >
-    </div>
-    <div class="h-6 w-px bg-primary/20 hidden md:block"></div>
-    <div class="flex items-center gap-2">
-      <span class="text-gray-500 font-medium font-bold"
-        >Total Working Days in Range:</span
-      >
-      <span class="text-gray-900 font-extrabold">{{ working_days_count }}</span>
-    </div>
-  </div>
-
-  <!-- Main Content Grid -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    <!-- Left Column: Critical Lists -->
-    <div class="lg:col-span-2 space-y-8">
-      <!-- Threshold Lists -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Below 50% -->
-        <div
-          class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
-        >
-          <div
-            class="bg-danger/5 px-6 py-4 border-b border-danger/10 flex justify-between items-center"
-          >
-            <h3 class="font-bold text-danger flex items-center gap-2">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fill-rule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clip-rule="evenodd"
-                ></path>
-              </svg>
-              Critical Attention (<50%)
-            </h3>
-            <span
-              class="bg-danger text-white text-xs font-bold px-2 py-0.5 rounded-full"
-              >{{ students_below_50|length }}</span
-            >
-          </div>
-          <div class="p-0 max-h-[400px] overflow-y-auto">
-            <table class="w-full text-left">
-              <thead
-                class="bg-gray-50 text-xs font-bold text-gray-500 uppercase"
-              >
-                <tr>
-                  <th class="px-6 py-3">Student</th>
-                  <th class="px-6 py-3">Roll</th>
-                  <th class="px-6 py-3">Rate</th>
-                  <th class="px-6 py-3 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100">
-                {% for s in students_below_50 %}
-                <tr class="hover:bg-danger/5 transition-colors group">
-                  <td
-                    class="px-6 py-4 font-semibold text-gray-900 group-hover:text-danger transition-colors"
-                  >
-                    {{ s.first_name }} {{ s.last_name }}
-                  </td>
-                  <td class="px-6 py-4 text-gray-500">{{ s.roll_number }}</td>
-                  <td class="px-6 py-4 font-black text-danger">
-                    {{ s.percentage|floatformat:1 }}%
-                  </td>
-                  <td class="px-6 py-4 text-right">
-                    <a
-                      href="{% url 'student_detail' s.pk %}"
-                      class="text-xs font-bold text-gray-400 hover:text-danger"
-                      >View Profile →</a
-                    >
-                  </td>
-                </tr>
-                {% empty %}
-                <tr>
-                  <td
-                    colspan="4"
-                    class="px-6 py-8 text-center text-gray-400 font-medium italic"
-                  >
-                    No students in critical range
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Below 75% -->
-        <div
-          class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
-        >
-          <div
-            class="bg-accent/5 px-6 py-4 border-b border-accent/10 flex justify-between items-center"
-          >
-            <h3 class="font-bold text-accent flex items-center gap-2">
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fill-rule="evenodd"
-                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                  clip-rule="evenodd"
-                ></path>
-              </svg>
-              Warning List (<75%)
-            </h3>
-            <span
-              class="bg-accent text-white text-xs font-bold px-2 py-0.5 rounded-full"
-              >{{ students_below_75|length }}</span
-            >
-          </div>
-          <div class="p-0 max-h-[400px] overflow-y-auto">
-            <table class="w-full text-left">
-              <thead
-                class="bg-gray-50 text-xs font-bold text-gray-500 uppercase"
-              >
-                <tr>
-                  <th class="px-6 py-3">Student</th>
-                  <th class="px-6 py-3">Roll</th>
-                  <th class="px-6 py-3">Rate</th>
-                  <th class="px-6 py-3 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100">
-                {% for s in students_below_75 %}
-                <tr class="hover:bg-accent/5 transition-colors group">
-                  <td
-                    class="px-6 py-4 font-semibold text-gray-900 group-hover:text-accent transition-colors"
-                  >
-                    {{ s.first_name }} {{ s.last_name }}
-                  </td>
-                  <td class="px-6 py-4 text-gray-500">{{ s.roll_number }}</td>
-                  <td class="px-6 py-4 font-black text-accent">
-                    {{ s.percentage|floatformat:1 }}%
-                  </td>
-                  <td class="px-6 py-4 text-right">
-                    <a
-                      href="{% url 'student_detail' s.pk %}"
-                      class="text-xs font-bold text-gray-400 hover:text-accent"
-                      >View Profile →</a
-                    >
-                  </td>
-                </tr>
-                {% empty %}
-                <tr>
-                  <td
-                    colspan="4"
-                    class="px-6 py-8 text-center text-gray-400 font-medium italic"
-                  >
-                    No students in warning range
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- Distribution & Trends -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-        <h3
-          class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2"
-        >
-          Attendance Distribution
-          <span
-            class="text-xs font-normal text-gray-400 bg-gray-100 px-2 py-1 rounded-lg"
-            >Performance Buckets</span
-          >
-        </h3>
-
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <!-- Excellent -->
-          <div class="text-center">
-            <div class="relative inline-flex items-center justify-center mb-2">
-              <svg class="w-16 h-16 transform -rotate-90">
-                <circle
-                  cx="32"
-                  cy="32"
-                  r="28"
-                  stroke="currentColor"
-                  stroke-width="6"
-                  fill="transparent"
-                  class="text-gray-100"
-                />
-                <circle
-                  cx="32"
-                  cy="32"
-                  r="28"
-                  stroke="currentColor"
-                  stroke-width="6"
-                  fill="transparent"
-                  stroke-dasharray="175"
-                  stroke-dashoffset="{{ 175|add:distribution.excellent|multiply:-1.75 }}"
-                  class="text-secondary"
-                />
-              </svg>
-              <span class="absolute text-lg font-black text-secondary"
-                >{{ distribution.excellent }}</span
-              >
-            </div>
-            <p class="text-xs font-bold uppercase text-gray-500 tracking-wider">
-              Excellent
-            </p>
-            <p class="text-[10px] text-gray-400">90-100%</p>
-          </div>
-
-          <!-- Good -->
-          <div class="text-center">
-            <div class="relative inline-flex items-center justify-center mb-2">
-              <svg class="w-16 h-16 transform -rotate-90">
-                <circle
-                  cx="32"
-                  cy="32"
-                  r="28"
-                  stroke="currentColor"
-                  stroke-width="6"
-                  fill="transparent"
-                  class="text-gray-100"
-                />
-                <circle
-                  cx="32"
-                  cy="32"
-                  r="28"
-                  stroke="currentColor"
-                  stroke-width="6"
-                  fill="transparent"
-                  stroke-dasharray="175"
-                  stroke-dashoffset="{{ 175|add:distribution.good|multiply:-1.75 }}"
-                  class="text-blue-500"
-                />
-              </svg>
-              <span class="absolute text-lg font-black text-blue-500"
-                >{{ distribution.good }}</span
-              >
-            </div>
-            <p class="text-xs font-bold uppercase text-gray-500 tracking-wider">
-              Good
-            </p>
-            <p class="text-[10px] text-gray-400">75-90%</p>
-          </div>
-
-          <!-- Warning -->
-          <div class="text-center">
-            <div class="relative inline-flex items-center justify-center mb-2">
-              <svg class="w-16 h-16 transform -rotate-90">
-                <circle
-                  cx="32"
-                  cy="32"
-                  r="28"
-                  stroke="currentColor"
-                  stroke-width="6"
-                  fill="transparent"
-                  class="text-gray-100"
-                />
-                <circle
-                  cx="32"
-                  cy="32"
-                  r="28"
-                  stroke="currentColor"
-                  stroke-width="6"
-                  fill="transparent"
-                  stroke-dasharray="175"
-                  stroke-dashoffset="{{ 175|add:distribution.warning|multiply:-1.75 }}"
-                  class="text-accent"
-                />
-              </svg>
-              <span class="absolute text-lg font-black text-accent"
-                >{{ distribution.warning }}</span
-              >
-            </div>
-            <p class="text-xs font-bold uppercase text-gray-500 tracking-wider">
-              Warning
-            </p>
-            <p class="text-[10px] text-gray-400">50-75%</p>
-          </div>
-
-          <!-- Critical -->
-          <div class="text-center">
-            <div class="relative inline-flex items-center justify-center mb-2">
-              <svg class="w-16 h-16 transform -rotate-90">
-                <circle
-                  cx="32"
-                  cy="32"
-                  r="28"
-                  stroke="currentColor"
-                  stroke-width="6"
-                  fill="transparent"
-                  class="text-gray-100"
-                />
-                <circle
-                  cx="32"
-                  cy="32"
-                  r="28"
-                  stroke="currentColor"
-                  stroke-width="6"
-                  fill="transparent"
-                  stroke-dasharray="175"
-                  stroke-dashoffset="{{ 175|add:distribution.critical|multiply:-1.75 }}"
-                  class="text-danger"
-                />
-              </svg>
-              <span class="absolute text-lg font-black text-danger"
-                >{{ distribution.critical }}</span
-              >
-            </div>
-            <p class="text-xs font-bold uppercase text-gray-500 tracking-wider">
-              Critical
-            </p>
-            <p class="text-[10px] text-gray-400"><50%</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Right Column: Trends & Patterns -->
-    <div class="space-y-8">
-      <!-- Consecutive Absentees -->
-      <div
-        class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
-      >
-        <div class="px-6 py-5 bg-gray-50 border-b border-gray-100">
-          <h3 class="font-bold text-gray-800 flex items-center gap-2">
-            <svg
-              class="w-5 h-5 text-danger"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              ></path>
-            </svg>
-            Continuous Absence (3+ Days)
-          </h3>
-        </div>
-        <div class="p-4 space-y-3">
-          {% for s in consecutive_absentees %}
-          <div
-            class="flex items-center justify-between p-3 bg-danger/5 rounded-xl border border-danger/10 group cursor-pointer hover:bg-danger/10 transition-colors"
-            onclick="window.location.href='{% url 'student_detail' s.pk %}'"
-          >
-            <div>
-              <p
-                class="font-bold text-gray-900 text-sm group-hover:text-danger tracking-tight"
-              >
-                {{ s.first_name }} {{ s.last_name }}
-              </p>
-              <p class="text-[10px] text-gray-500 uppercase tracking-tighter">
-                Roll: {{ s.roll_number }}
-              </p>
-            </div>
-            <span
-              class="px-2 py-1 bg-danger text-white text-[10px] font-black rounded-lg uppercase tracking-widest animate-pulse"
-              >Review</span
-            >
-          </div>
-          {% empty %}
-          <div class="py-8 text-center text-gray-400 italic">
-            No consecutive absentees detected
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-
-      <!-- Frequently Absent -->
-      <div
-        class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
-      >
-        <div class="px-6 py-5 bg-gray-50 border-b border-gray-100">
-          <h3 class="font-bold text-gray-800 flex items-center gap-2">
-            <svg
-              class="w-5 h-5 text-primary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-              ></path>
-            </svg>
-            Most Missed Days (Range)
-          </h3>
-        </div>
-        <div class="p-4 space-y-4">
-          {% for s in frequently_absent %}
-          <a href="{% url 'student_detail' s.pk %}" class="block group">
-            <div class="flex items-center justify-between mb-1">
-              <span
-                class="text-sm font-bold text-gray-700 group-hover:text-primary transition-colors"
-                >{{ s.first_name }} {{ s.last_name }}</span
-              >
-              <span class="text-xs font-black text-primary"
-                >{{ s.absent_count }} days</span
-              >
-            </div>
-            <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-              <div
-                class="bg-primary/20 h-full rounded-full transition-all duration-1000 group-hover:bg-primary"
-                style="width: {% if working_days_count > 0 %}{{ s.absent_count|multiply:100|divide:working_days_count }}{% else %}0{% endif %}%"
-              ></div>
-            </div>
-          </a>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
 
-<style>
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  .animate-fadeIn {
-    animation: fadeIn 0.5s ease-out forwards;
-  }
-</style>
+{% if filter_type == 'custom' %}
+<div class="card mb-4 animate-fadeIn" style="background: var(--background); border-style: dashed;">
+    <form method="get" style="display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;">
+        <input type="hidden" name="filter" value="custom">
+        <div style="flex: 1; min-width: 200px;">
+            <label style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Start Date</label>
+            <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); margin-top: 4px;">
+        </div>
+        <div style="flex: 1; min-width: 200px;">
+            <label style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">End Date</label>
+            <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); margin-top: 4px;">
+        </div>
+        <button type="submit" class="btn btn-primary" style="padding: 11px 24px;">Filter Range</button>
+    </form>
+</div>
+{% endif %}
+
+<div class="metrics-grid">
+    <div class="metric-card">
+        <div class="metric-icon bg-blue-soft"><i class="fas fa-users"></i></div>
+        <div style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Total Students</div>
+        <div style="font-size: 28px; font-weight: 800; color: var(--text-main); margin-top: 4px;">{{ total_students_count }}</div>
+    </div>
+    
+    <div class="metric-card">
+        <div class="metric-icon bg-green-soft"><i class="fas fa-user-check"></i></div>
+        <div style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Present Today</div>
+        <div style="font-size: 28px; font-weight: 800; color: var(--text-main); margin-top: 4px;">{{ present_today }}</div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-icon bg-red-soft"><i class="fas fa-user-times"></i></div>
+        <div style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Absent Today</div>
+        <div style="font-size: 28px; font-weight: 800; color: var(--text-main); margin-top: 4px;">{{ absent_today }}</div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-icon bg-orange-soft"><i class="fas fa-chart-line"></i></div>
+        <div style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Avg. Rate</div>
+        <div style="font-size: 28px; font-weight: 800; color: var(--text-main); margin-top: 4px;">
+            {% if filter_type == 'today' %}{{ attendance_percentage_today|floatformat:1 }}{% else %}{{ avg_percentage|floatformat:1 }}{% endif %}%
+        </div>
+    </div>
+</div>
+
+<div class="main-grid">
+    <div style="display: flex; flex-direction: column; gap: 32px;">
+        <div class="card" style="padding: 32px;">
+            <h3 style="font-weight: 700; color: var(--text-main); margin-bottom: 32px;">Success Distribution</h3>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; text-align: center;">
+                {% with excellent_fill=distribution.excellent|multiply:251|divide:total_students_count %}
+                <div>
+                    <div class="dist-circle">
+                        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" stroke="#f1f5f9"/><circle cx="50" cy="50" r="40" stroke="#10b981" stroke-dasharray="251" stroke-dashoffset="{{ 251|subtract:excellent_fill }}"/></svg>
+                        <span style="font-weight: 800; color: #10b981;">{{ distribution.excellent }}</span>
+                    </div>
+                    <span style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Excellent</span>
+                </div>
+                {% endwith %}
+                
+                {% with good_fill=distribution.good|multiply:251|divide:total_students_count %}
+                <div>
+                    <div class="dist-circle">
+                        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" stroke="#f1f5f9"/><circle cx="50" cy="50" r="40" stroke="#3b82f6" stroke-dasharray="251" stroke-dashoffset="{{ 251|subtract:good_fill }}"/></svg>
+                        <span style="font-weight: 800; color: #3b82f6;">{{ distribution.good }}</span>
+                    </div>
+                    <span style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Good</span>
+                </div>
+                {% endwith %}
+
+                {% with warning_fill=distribution.warning|multiply:251|divide:total_students_count %}
+                <div>
+                    <div class="dist-circle">
+                        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" stroke="#f1f5f9"/><circle cx="50" cy="50" r="40" stroke="#f59e0b" stroke-dasharray="251" stroke-dashoffset="{{ 251|subtract:warning_fill }}"/></svg>
+                        <span style="font-weight: 800; color: #f59e0b;">{{ distribution.warning }}</span>
+                    </div>
+                    <span style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Warning</span>
+                </div>
+                {% endwith %}
+
+                {% with critical_fill=distribution.critical|multiply:251|divide:total_students_count %}
+                <div>
+                    <div class="dist-circle">
+                        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" stroke="#f1f5f9"/><circle cx="50" cy="50" r="40" stroke="#ef4444" stroke-dasharray="251" stroke-dashoffset="{{ 251|subtract:critical_fill }}"/></svg>
+                        <span style="font-weight: 800; color: #ef4444;">{{ distribution.critical }}</span>
+                    </div>
+                    <span style="font-size: 10px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Critical</span>
+                </div>
+                {% endwith %}
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <div class="critical-list">
+                <div class="list-header" style="background: #fef2f2;">
+                    <h3 style="font-weight: 700; color: #b91c1c; font-size: 14px;"><i class="fas fa-exclamation-circle"></i> Below 50%</h3>
+                    <span class="status-badge" style="background: #b91c1c; color: #fff;">{{ students_below_50|length }}</span>
+                </div>
+                {% for s in students_below_50 %}
+                <a href="{% url 'student_detail' s.pk %}" class="student-row">
+                    <div class="student-avatar">{{ s.first_name|slice:":1" }}</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; font-size: 14px;">{{ s.first_name }} {{ s.last_name }}</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">Roll: {{ s.roll_number }}</div>
+                    </div>
+                    <div style="font-weight: 800; color: #ef4444;">{{ s.percentage|floatformat:1 }}%</div>
+                </a>
+                {% empty %}
+                <div style="padding: 40px; text-align: center; color: var(--text-muted); font-size: 13px;">No students in this range</div>
+                {% endfor %}
+            </div>
+
+            <div class="critical-list">
+                <div class="list-header" style="background: #fffbeb;">
+                    <h3 style="font-weight: 700; color: #d97706; font-size: 14px;"><i class="fas fa-exclamation-triangle"></i> Below 75%</h3>
+                    <span class="status-badge" style="background: #d97706; color: #fff;">{{ students_below_75|length }}</span>
+                </div>
+                {% for s in students_below_75 %}
+                <a href="{% url 'student_detail' s.pk %}" class="student-row">
+                    <div class="student-avatar">{{ s.first_name|slice:":1" }}</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; font-size: 14px;">{{ s.first_name }} {{ s.last_name }}</div>
+                        <div style="font-size: 12px; color: var(--text-muted);">Roll: {{ s.roll_number }}</div>
+                    </div>
+                    <div style="font-weight: 800; color: #f59e0b;">{{ s.percentage|floatformat:1 }}%</div>
+                </a>
+                {% empty %}
+                <div style="padding: 40px; text-align: center; color: var(--text-muted); font-size: 13px;">No students in this range</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 32px;">
+        <div class="card">
+            <h3 style="font-weight: 700; color: var(--text-main); margin-bottom: 20px;">Continuous Absence</h3>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                {% for s in consecutive_absentees %}
+                <div class="card" style="padding: 16px; background: #fffcfc; border-color: #fee2e2; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 700; font-size: 14px;">{{ s.first_name }} {{ s.last_name }}</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">3+ DAYS MISSED</div>
+                    </div>
+                    <a href="{% url 'student_detail' s.pk %}" class="btn" style="padding: 6px; background: #fecaca; color: #b91c1c;"><i class="fas fa-arrow-right"></i></a>
+                </div>
+                {% empty %}
+                <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 13px; font-style: italic;">All clear today!</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 style="font-weight: 700; color: var(--text-main); margin-bottom: 20px;">Frequently Absent</h3>
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                {% for s in frequently_absent %}
+                <div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-weight: 600; font-size: 13px;">{{ s.first_name }} {{ s.last_name }}</span>
+                        <span style="font-weight: 800; color: var(--primary); font-size: 12px;">{{ s.absent_count }} Days</span>
+                    </div>
+                    <div class="progress-bar" style="height: 4px; margin-top: 0;">
+                        <div class="progress-fill" style="width: {% if working_days_count > 0 %}{{ s.absent_count|multiply:100|divide:working_days_count }}{% else %}0{% endif %}%; background: var(--primary);"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

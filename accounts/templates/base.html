@@ -4,124 +4,346 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Attendance System{% endblock %}</title>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --background: #f8fafc;
+            --sidebar-bg: #1e293b;
+            --sidebar-hover: #334155;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
             margin: 0;
             padding: 0;
-            background-color: #f4f7f6;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
             display: flex;
             min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Loading Animation */
+        #loader-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--background);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease-out, visibility 0.5s;
+        }
+
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 5px solid var(--primary);
+            border-bottom-color: transparent;
+            border-radius: 50%;
+            display: inline-block;
+            box-sizing: border-box;
+            animation: rotation 1s linear infinite;
+        }
+
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loaded #loader-wrapper {
+            opacity: 0;
+            visibility: hidden;
         }
 
         /* Sidebar Styles */
         .sidebar {
-            width: 250px;
-            background-color: #343a40;
+            width: 260px;
+            background-color: var(--sidebar-bg);
             color: #fff;
             display: flex;
             flex-direction: column;
-            padding-top: 20px;
+            padding: 24px 0;
+            position: fixed;
+            height: 100vh;
+            transition: all 0.3s ease;
+            z-index: 100;
         }
-        .sidebar h2 {
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 22px;
+
+        .sidebar-header {
+            padding: 0 24px 32px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
+
+        .sidebar-header .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .sidebar-header h2 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .sidebar-nav {
+            flex-grow: 1;
+        }
+
         .sidebar a {
-            color: #ccc;
+            color: #94a3b8;
             text-decoration: none;
-            padding: 15px 20px;
-            display: block;
-            border-left: 4px solid transparent;
-            transition: 0.3s;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            margin: 4px 12px;
+            border-radius: 8px;
         }
+
+        .sidebar a i {
+            width: 20px;
+            text-align: center;
+            font-size: 18px;
+        }
+
         .sidebar a:hover {
-            background-color: #495057;
+            background-color: var(--sidebar-hover);
             color: #fff;
-            border-left: 4px solid #007bff;
+            transform: translateX(4px);
+        }
+
+        .sidebar a.active {
+            background-color: var(--primary);
+            color: #fff;
         }
 
         /* Main Content Styles */
         .main-content {
             flex-grow: 1;
+            margin-left: 260px;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
+            width: calc(100% - 260px);
         }
+
         .topbar {
-            background-color: #fff;
-            height: 60px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            height: 70px;
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            padding: 0 20px;
-        }
-        .content {
-            padding: 30px;
-            flex-grow: 1;
-            overflow-y: auto;
+            padding: 0 32px;
+            position: sticky;
+            top: 0;
+            z-index: 90;
+            border-bottom: 1px solid var(--border);
         }
 
-        /* Utility classes often used in views */
+        .content {
+            padding: 32px;
+            flex-grow: 1;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Common Components */
         .card {
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
-        .btn-logout {
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 10px;
             font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            text-decoration: none;
         }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-logout {
+            background: #ffe4e6;
+            color: var(--danger);
+        }
+
         .btn-logout:hover {
-            background: #c82333;
+            background: var(--danger);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        /* Utilities */
+        .text-center { text-align: center; }
+        .mt-4 { margin-top: 1rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .sidebar { width: 80px; }
+            .sidebar-header h2, .sidebar a span { display: none; }
+            .sidebar-header { padding: 0; justify-content: center; }
+            .main-content { margin-left: 80px; width: calc(100% - 80px); }
+            .sidebar a { justify-content: center; padding: 12px; }
+            .sidebar a i { margin: 0; font-size: 20px; }
         }
     </style>
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
 
+    <div id="loader-wrapper">
+        <span class="loader"></span>
+    </div>
+
     <!-- Sidebar Layout -->
     <div class="sidebar">
-        <h2>Attendance System</h2>
+        <div class="sidebar-header">
+            <div class="logo-icon">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <h2>EduTrack</h2>
+        </div>
         
-        <!-- Common Route -->
-        <a href="{% url 'dashboard_router' %}">Dashboard</a>
+        <div class="sidebar-nav">
+            <a href="{% url 'dashboard_router' %}" id="nav-dashboard">
+                <i class="fas fa-th-large"></i>
+                <span>Dashboard</span>
+            </a>
 
-        {% if user.is_staff %}
-            <!-- Teacher Navigation -->
-            <a href="{% url 'student_list' %}">Manage Students</a>
-            <a href="{% url 'mark_attendance' %}">Mark Attendance</a>
-            {% if user.is_superuser %}
-                <a href="{% url 'holiday_management' %}">Holidays Management</a>
-                <a href="{% url 'teacher_list' %}">Manage Teachers</a>
+            {% if user.is_staff %}
+                <a href="{% url 'student_list' %}" id="nav-students">
+                    <i class="fas fa-user-graduate"></i>
+                    <span>Students</span>
+                </a>
+                <a href="{% url 'mark_attendance' %}" id="nav-attendance">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>Mark Attendance</span>
+                </a>
+                {% if user.is_superuser %}
+                    <a href="{% url 'holiday_management' %}" id="nav-holidays">
+                        <i class="fas fa-calendar-plus"></i>
+                        <span>Holidays</span>
+                    </a>
+                    <a href="{% url 'teacher_list' %}" id="nav-teachers">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                        <span>Teachers</span>
+                    </a>
+                {% endif %}
             {% endif %}
-        {% endif %}
+        </div>
+
+        <div class="sidebar-footer" style="padding: 24px; border-top: 1px solid var(--sidebar-hover);">
+            <p style="font-size: 12px; color: #64748b; text-align: center;">&copy; 2026 EduTrack Pro</p>
+        </div>
     </div>
 
     <!-- Main Section -->
     <div class="main-content">
         <div class="topbar">
             {% if user.is_authenticated %}
-                <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="user-profile">
                     <div style="text-align: right; line-height: 1.2;">
-                        <span style="display: block; font-size: 14px; font-weight: bold; color: #333;">
+                        <span style="display: block; font-size: 14px; font-weight: 600; color: var(--text-main);">
                             {{ user.get_full_name|default:user.username }}
                         </span>
-                        <span style="display: block; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">
-                            {% if user.is_superuser %}Administrator{% elif user.is_staff %}Teacher{% else %}Student{% endif %}
+                        <span style="display: block; font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">
+                            {% if user.is_superuser %}Admin{% elif user.is_staff %}Teacher{% else %}Student{% endif %}
                         </span>
                     </div>
-                    <form method="post" action="{% url 'logout' %}" style="margin: 0; display: inline-block;">
+                    <div class="user-avatar">
+                        {{ user.username|slice:":1"|upper }}
+                    </div>
+                    <form method="post" action="{% url 'logout' %}" style="margin: 0;">
                         {% csrf_token %}
-                        <button type="submit" class="btn-logout" title="Logout">
-                            <svg style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                            Logout
+                        <button type="submit" class="btn btn-logout" title="Logout">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Logout</span>
                         </button>
                     </form>
                 </div>
@@ -134,5 +356,43 @@
         </div>
     </div>
 
+    <script>
+        // Loader handling
+        window.addEventListener('load', function() {
+            document.body.classList.add('loaded');
+        });
+
+        // Active nav marking
+        const currentPath = window.location.pathname.replace(/\/$/, ""); // Remove trailing slash if any
+        const navLinks = document.querySelectorAll('.sidebar a');
+        
+        let bestMatch = null;
+        let maxMatchLength = -1;
+
+        if (currentPath === "/teachers/dashboard" || currentPath === "/student/dashboard" || currentPath === "/dashboard") {
+            bestMatch = document.getElementById('nav-dashboard');
+        }
+
+        navLinks.forEach(link => {
+            if (bestMatch) return;
+
+            const href = link.getAttribute('href').replace(/\/$/, "");
+            if (currentPath === href) {
+                bestMatch = link;
+                maxMatchLength = href.length;
+            } else if (currentPath.startsWith(href + "/") && href.length > maxMatchLength && href !== "") {
+                bestMatch = link;
+                maxMatchLength = href.length;
+            }
+        });
+
+        if (bestMatch) {
+            bestMatch.classList.add('active');
+        } else if (currentPath === "" || currentPath === "/") {
+            const dash = document.getElementById('nav-dashboard');
+            if (dash) dash.classList.add('active');
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

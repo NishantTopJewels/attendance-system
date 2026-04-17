@@ -26,7 +26,7 @@ urlpatterns = [
     path("teachers/", include("teachers.urls")),
     path("attendance/", include("attendance.urls")),
     path("", accounts_views.HomeView.as_view(), name="home"),
-    path("login/", auth_views.LoginView.as_view(template_name="registration/login.html", redirect_authenticated_user=True), name="root_login"),
+    path("login/", accounts_views.RoleLoginView.as_view(), name="root_login"),
     path("accounts/", include("django.contrib.auth.urls")),
     path("dashboard/", accounts_views.DashboardRedirectView.as_view(), name="dashboard_router"),
     # Custom path for reusability as per user request: /set-password/<uid>/<token>/

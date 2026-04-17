@@ -3,278 +3,286 @@ Attendance System{% endblock %} {% block content %} {% load math_filters %}
 <!-- Tailwind CSS Play CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
-  tailwind.config = {
-    theme: {
-      extend: {
-        colors: {
-          primary: "#4f46e5",
-          secondary: "#10b981",
-          accent: "#f59e0b",
-          danger: "#ef4444",
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    primary: "#4f46e5",
+                    secondary: "#10b981",
+                    accent: "#f59e0b",
+                    danger: "#ef4444",
+                },
+            },
         },
-      },
-    },
-  };
+    };
 </script>
 
 <div class="space-y-8 animate-fadeIn">
-  <!-- Header with Breadcrumbs -->
-  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-    <div>
-      <nav class="flex text-gray-500 text-xs font-bold uppercase tracking-widest mb-2" aria-label="Breadcrumb">
-        <a href="{% url 'student_list' %}" class="hover:text-primary transition-colors">Students</a>
-        <span class="mx-2">/</span>
-        <span class="text-gray-900">Student Profile</span>
-      </nav>
-      <h1 class="text-3xl font-bold text-gray-800">
-        {{ student.first_name }} {{ student.last_name }}
-        <a href="{% url 'student_update' student.pk %}"
-          class="ml-2 inline-flex items-center p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-lg transition-colors"
-          title="Edit Profile">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
-            </path>
-          </svg>
-        </a>
-      </h1>
-      <p class="text-gray-500 mt-1">
-        Roll Number: #{{ student.roll_number }} • Joined {{ student.created_at|date:"M Y" }}
-      </p>
+    <!-- Header with Breadcrumbs -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <nav class="flex text-gray-500 text-xs font-bold uppercase tracking-widest mb-2" aria-label="Breadcrumb">
+                <a href="{% url 'student_list' %}" class="hover:text-primary transition-colors">Students</a>
+                <span class="mx-2">/</span>
+                <span class="text-gray-900">Student Profile</span>
+            </nav>
+            <h1 class="text-3xl font-bold text-gray-800">
+                {{ student.first_name }} {{ student.last_name }}
+                <a href="{% url 'student_update' student.pk %}"
+                    class="ml-2 inline-flex items-center p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-lg transition-colors"
+                    title="Edit Profile">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
+                        </path>
+                    </svg>
+                </a>
+            </h1>
+            <p class="text-gray-500 mt-1">
+                Roll Number: #{{ student.roll_number }} • Joined {{ student.created_at|date:"M Y" }}
+            </p>
+        </div>
+
+        <div class="flex items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-gray-100">
+            <span class="text-sm font-medium text-gray-500 px-3">Filter:</span>
+            <div class="flex gap-1">
+                {% for type, label in filter_options %}
+                <a href="?filter={{ type }}{% if type == 'custom' %}&start_date={{ start_date }}&end_date={{ end_date }}{% endif %}"
+                    class="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 {% if filter_type == type %} bg-primary text-white shadow-md shadow-primary/20 {% else %} text-gray-600 hover:bg-gray-100 {% endif %}">
+                    {{ label }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
     </div>
 
-    <div class="flex items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-gray-100">
-      <span class="text-sm font-medium text-gray-500 px-3">Filter:</span>
-      <div class="flex gap-1">
-        {% for type, label in filter_options %}
-        <a href="?filter={{ type }}{% if type == 'custom' %}&start_date={{ start_date }}&end_date={{ end_date }}{% endif %}"
-          class="px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 {% if filter_type == type %} bg-primary text-white shadow-md shadow-primary/20 {% else %} text-gray-600 hover:bg-gray-100 {% endif %}">
-          {{ label }}
-        </a>
-        {% endfor %}
-      </div>
+    <!-- Custom Range Form -->
+    {% if filter_type == 'custom' %}
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 animate-fadeIn">
+        <form method="get" class="flex flex-wrap items-end gap-4">
+            <input type="hidden" name="filter" value="custom" />
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-gray-500 uppercase">Start Date</label>
+                <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}"
+                    class="block w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none" />
+            </div>
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-gray-500 uppercase">End Date</label>
+                <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}"
+                    class="block w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none" />
+            </div>
+            <button type="submit"
+                class="px-6 py-2 bg-primary text-white font-bold rounded-lg hover:shadow-lg transition-all active:scale-95">
+                Filter History
+            </button>
+        </form>
     </div>
-  </div>
+    {% endif %}
 
-  <!-- Custom Range Form -->
-  {% if filter_type == 'custom' %}
-  <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 animate-fadeIn">
-    <form method="get" class="flex flex-wrap items-end gap-4">
-      <input type="hidden" name="filter" value="custom" />
-      <div class="space-y-1">
-        <label class="text-xs font-bold text-gray-500 uppercase">Start Date</label>
-        <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}"
-          class="block w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none" />
-      </div>
-      <div class="space-y-1">
-        <label class="text-xs font-bold text-gray-500 uppercase">End Date</label>
-        <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}"
-          class="block w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none" />
-      </div>
-      <button type="submit"
-        class="px-6 py-2 bg-primary text-white font-bold rounded-lg hover:shadow-lg transition-all active:scale-95">
-        Filter History
-      </button>
-    </form>
-  </div>
-  {% endif %}
+    <!-- Stats & Analytics Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <!-- Left: Student Info & % -->
+        <div class="space-y-6 lg:col-span-1">
+            <!-- Percentage Card -->
+            <div
+                class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center relative overflow-hidden group">
+                <div
+                    class="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full group-hover:scale-150 transition-transform duration-500">
+                </div>
+                <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 relative">
+                    Attendance Rate
+                </h3>
+                <div class="inline-flex items-center justify-center relative">
+                    <svg class="w-32 h-32 transform -rotate-90">
+                        <circle cx="64" cy="64" r="58" stroke="currentColor" stroke-width="8" fill="transparent"
+                            class="text-gray-100" />
+                        <circle cx="64" cy="64" r="58" stroke="currentColor" stroke-width="8" fill="transparent"
+                            stroke-dasharray="364" stroke-dashoffset="{{ 100|subtract:percentage|multiply:3.64 }}"
+                            class="{% if percentage >= 75 %}text-secondary{% elif percentage >= 50 %}text-accent{% else %}text-danger{% endif %} transition-all duration-1000" />
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                        <span class="text-3xl font-black text-gray-900">{{ percentage|floatformat:0 }}%</span>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-around text-center">
+                    <div>
+                        <p class="text-lg font-bold text-gray-900">{{ present_count }}</p>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase">Present</p>
+                    </div>
+                    <div class="w-px h-8 bg-gray-100"></div>
+                    <div>
+                        <p class="text-lg font-bold text-gray-900">{{ total_days }}</p>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase">
+                            Total Days
+                        </p>
+                    </div>
+                </div>
+            </div>
 
-  <!-- Stats & Analytics Grid -->
-  <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-    <!-- Left: Student Info & % -->
-    <div class="space-y-6 lg:col-span-1">
-      <!-- Percentage Card -->
-      <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center relative overflow-hidden group">
-        <div
-          class="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full group-hover:scale-150 transition-transform duration-500">
+            <!-- Profile Details -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+                <h4 class="font-bold text-gray-800 border-b border-gray-50 pb-3">
+                    Contact Details
+                </h4>
+                <div class="space-y-3">
+                    <div class="flex items-center gap-3 text-sm">
+                        <div class="p-2 bg-gray-50 rounded-lg">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                        </div>
+                        <span class="text-gray-600">{{ student.email }}</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-sm">
+                        <div class="p-2 bg-gray-50 rounded-lg">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z">
+                                </path>
+                            </svg>
+                        </div>
+                        <span class="text-gray-600">{{ student.phone|default:"N/A" }}</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-sm">
+                        <div class="p-2 bg-gray-50 rounded-lg">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                        </div>
+                        <span class="text-gray-600">Age: {{ student.age }}</span>
+                    </div>
+                </div>
+            </div>
         </div>
-        <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 relative">
-          Attendance Rate
-        </h3>
-        <div class="inline-flex items-center justify-center relative">
-          <svg class="w-32 h-32 transform -rotate-90">
-            <circle cx="64" cy="64" r="58" stroke="currentColor" stroke-width="8" fill="transparent"
-              class="text-gray-100" />
-            <circle cx="64" cy="64" r="58" stroke="currentColor" stroke-width="8" fill="transparent"
-              stroke-dasharray="364" stroke-dashoffset="{{ 364|subtract:percentage|multiply:3.64 }}"
-              class="{% if percentage >= 75 %}text-secondary{% elif percentage >= 50 %}text-accent{% else %}text-danger{% endif %} transition-all duration-1000" />
-          </svg>
-          <div class="absolute inset-0 flex flex-col items-center justify-center">
-            <span class="text-3xl font-black text-gray-900">{{ percentage|floatformat:0 }}%</span>
-          </div>
-        </div>
-        <div class="mt-6 flex justify-around text-center">
-          <div>
-            <p class="text-lg font-bold text-gray-900">{{ present_count }}</p>
-            <p class="text-[10px] text-gray-400 font-bold uppercase">Present</p>
-          </div>
-          <div class="w-px h-8 bg-gray-100"></div>
-          <div>
-            <p class="text-lg font-bold text-gray-900">{{ total_days }}</p>
-            <p class="text-[10px] text-gray-400 font-bold uppercase">
-              Total Days
-            </p>
-          </div>
-        </div>
-      </div>
 
-      <!-- Profile Details -->
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
-        <h4 class="font-bold text-gray-800 border-b border-gray-50 pb-3">
-          Contact Details
-        </h4>
-        <div class="space-y-3">
-          <div class="flex items-center gap-3 text-sm">
-            <div class="p-2 bg-gray-50 rounded-lg">
-              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
-                </path>
-              </svg>
+        <!-- Right: History & Trend Analysis -->
+        <div class="lg:col-span-3 space-y-8">
+            <!-- Long Gaps / Holidays Analytics -->
+            {% if consecutive_holidays or consecutive_absences %}
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6">
+                <h3 class="text-amber-800 font-bold mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                        </path>
+                    </svg>
+                    Attendance Anomaly Report (3+ Days)
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for stretch in consecutive_holidays %}
+                    <div class="bg-white/60 p-3 rounded-xl border border-amber-200/50">
+                        <p class="text-xs font-black text-amber-600 uppercase mb-1">
+                            Holiday Gap
+                        </p>
+                        <p class="text-sm font-medium text-gray-800">
+                            {{ stretch|length }} straight holidays discovered.
+                        </p>
+                        <div class="mt-2 flex flex-wrap gap-1">
+                            {% for day in stretch %}
+                            <span
+                                class="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded border border-amber-200"
+                                title="{{ day.reason }}">{{ day.date|date:"d M" }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %} {% for stretch in consecutive_absences %}
+                    <div class="bg-red-50 p-3 rounded-xl border border-red-100">
+                        <p class="text-xs font-black text-red-600 uppercase mb-1">
+                            Absence Streak
+                        </p>
+                        <p class="text-sm font-medium text-gray-800">
+                            Student absent for {{ stretch|length }} consecutive working days.
+                        </p>
+                        <div class="mt-2 flex flex-wrap gap-1">
+                            {% for day in stretch %}
+                            <span
+                                class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded border border-red-200">{{
+                                day|date:"d
+                                M" }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
-            <span class="text-gray-600">{{ student.email }}</span>
-          </div>
-          <div class="flex items-center gap-3 text-sm">
-            <div class="p-2 bg-gray-50 rounded-lg">
-              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z">
-                </path>
-              </svg>
+            {% endif %}
+
+            <!-- History Table -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="px-6 py-5 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+                    <h3 class="font-bold text-gray-800">Attendance Log</h3>
+                    <span class="text-xs text-gray-400 bg-white px-3 py-1 rounded-full border border-gray-100">
+                        {{start_date}} -{{ end_date }}
+                    </span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50 text-xs font-bold text-gray-500 uppercase">
+                            <tr>
+                                <th class="px-8 py-4">Date</th>
+                                <th class="px-8 py-4 text-center">Status</th>
+                                <th class="px-8 py-4">Marked By</th>
+                                <th class="px-8 py-4">Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50">
+                            {% for record in attendance_records %}
+                            <tr class="hover:bg-gray-50/50 transition-colors">
+                                <td class="px-8 py-5 text-sm font-bold text-gray-900">
+                                    {{ record.date|date:"d M Y" }}
+                                    <span class="text-xs font-normal text-gray-400 ml-2">
+                                        ({{record.date|date:"D"}})</span>
+                                </td>
+                                <td class="px-8 py-5 text-center">
+                                    {% if record.status %}
+                                    <span
+                                        class="px-4 py-1.5 bg-secondary/10 text-secondary text-xs font-black rounded-full uppercase tracking-widest">Present</span>
+                                    {% else %}
+                                    <span
+                                        class="px-4 py-1.5 bg-danger/10 text-danger text-xs font-black rounded-full uppercase tracking-widest">Absent</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-8 py-5 text-sm text-gray-600 font-medium">
+                                    {{ record.marked_by.username|default:"System" }}
+                                </td>
+                                <td class="px-8 py-5 text-xs text-gray-400 font-medium">
+                                    {{ record.updated_at|date:"f a" }}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="px-8 py-16 text-center text-gray-400 italic">
+                                    No attendance records found for this period
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <span class="text-gray-600">{{ student.phone|default:"N/A" }}</span>
-          </div>
-          <div class="flex items-center gap-3 text-sm">
-            <div class="p-2 bg-gray-50 rounded-lg">
-              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-              </svg>
-            </div>
-            <span class="text-gray-600">Age: {{ student.age }}</span>
-          </div>
         </div>
-      </div>
     </div>
-
-    <!-- Right: History & Trend Analysis -->
-    <div class="lg:col-span-3 space-y-8">
-      <!-- Long Gaps / Holidays Analytics -->
-      {% if consecutive_holidays or consecutive_absences %}
-      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6">
-        <h3 class="text-amber-800 font-bold mb-4 flex items-center gap-2">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
-            </path>
-          </svg>
-          Attendance Anomaly Report (3+ Days)
-        </h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {% for stretch in consecutive_holidays %}
-          <div class="bg-white/60 p-3 rounded-xl border border-amber-200/50">
-            <p class="text-xs font-black text-amber-600 uppercase mb-1">
-              Holiday Gap
-            </p>
-            <p class="text-sm font-medium text-gray-800">
-              {{ stretch|length }} straight holidays discovered.
-            </p>
-            <div class="mt-2 flex flex-wrap gap-1">
-              {% for day in stretch %}
-              <span class="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded border border-amber-200"
-                title="{{ day.reason }}">{{ day.date|date:"d M" }}</span>
-              {% endfor %}
-            </div>
-          </div>
-          {% endfor %} {% for stretch in consecutive_absences %}
-          <div class="bg-red-50 p-3 rounded-xl border border-red-100">
-            <p class="text-xs font-black text-red-600 uppercase mb-1">
-              Absence Streak
-            </p>
-            <p class="text-sm font-medium text-gray-800">
-              Student absent for {{ stretch|length }} consecutive working days.
-            </p>
-            <div class="mt-2 flex flex-wrap gap-1">
-              {% for day in stretch %}
-              <span class="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded border border-red-200">{{ day|date:"d
-                M" }}</span>
-              {% endfor %}
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
-
-      <!-- History Table -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-6 py-5 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
-          <h3 class="font-bold text-gray-800">Attendance Log</h3>
-          <span class="text-xs text-gray-400 bg-white px-3 py-1 rounded-full border border-gray-100">{{ start_date }} -
-            {{ end_date }}</span>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left">
-            <thead class="bg-gray-50 text-xs font-bold text-gray-500 uppercase">
-              <tr>
-                <th class="px-8 py-4">Date</th>
-                <th class="px-8 py-4 text-center">Status</th>
-                <th class="px-8 py-4">Marked By</th>
-                <th class="px-8 py-4">Timestamp</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-50">
-              {% for record in attendance_records %}
-              <tr class="hover:bg-gray-50/50 transition-colors">
-                <td class="px-8 py-5 text-sm font-bold text-gray-900">
-                  {{ record.date|date:"d M Y" }}
-                  <span class="text-xs font-normal text-gray-400 ml-2">({{ record.date|date:"D" }})</span>
-                </td>
-                <td class="px-8 py-5 text-center">
-                  {% if record.status %}
-                  <span
-                    class="px-4 py-1.5 bg-secondary/10 text-secondary text-xs font-black rounded-full uppercase tracking-widest">Present</span>
-                  {% else %}
-                  <span
-                    class="px-4 py-1.5 bg-danger/10 text-danger text-xs font-black rounded-full uppercase tracking-widest">Absent</span>
-                  {% endif %}
-                </td>
-                <td class="px-8 py-5 text-sm text-gray-600 font-medium">
-                  {{ record.marked_by.username|default:"System" }}
-                </td>
-                <td class="px-8 py-5 text-xs text-gray-400 font-medium">
-                  {{ record.updated_at|date:"f a" }}
-                </td>
-              </tr>
-              {% empty %}
-              <tr>
-                <td colspan="4" class="px-8 py-16 text-center text-gray-400 italic">
-                  No attendance records found for this period
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
 
 <style>
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
-    to {
-      opacity: 1;
-      transform: translateY(0);
+    .animate-fadeIn {
+        animation: fadeIn 0.5s ease-out forwards;
     }
-  }
-
-  .animate-fadeIn {
-    animation: fadeIn 0.5s ease-out forwards;
-  }
 </style>
 {% endblock %}
