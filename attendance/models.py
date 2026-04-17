@@ -9,6 +9,7 @@ class Attendance(models.Model):
     marked_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    email_sent = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('student', 'date')

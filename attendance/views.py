@@ -55,6 +55,10 @@ def mark_attendance(request):
                 }
             )
         
+        # Trigger email notifications for absences and streaks
+        from .notifications import send_attendance_notifications
+        send_attendance_notifications(date_obj)
+        
         # Explicit Redirect mapping strictly back to visual read-only representation.
         url = reverse('mark_attendance') + f"?date={date_str}"
         return redirect(url)
